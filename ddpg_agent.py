@@ -22,7 +22,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent():
     """Interacts with and learns from the environment."""
     
-    def __init__(self, actor_input, actor_output, critic_input, random_seed, name):
+    def __init__(self, state_size, action_size, critic_action_size, random_seed, name):
         """Initialize an Agent object.
         
         Params
@@ -32,26 +32,26 @@ class Agent():
             random_seed (int): random seed
             name (str) : name of the agent
         """
-        self.state_size = actor_input
-        self.action_size = actor_output
+        self.state_size = state_size
+        self.action_size = action_size
         self.seed = random.seed(random_seed)
         self.name = name
 
         # Actor Network (w/ Target Network)
-        self.actor_local = Actor(actor_input, actor_output, random_seed).to(device)
-        self.actor_target = Actor(actor_input, actor_output, random_seed).to(device)
+        self.actor_local = Actor(state_size, action_size, random_seed).to(device)
+        self.actor_target = Actor(state_size, action_size, random_seed).to(device)
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=LR_ACTOR)
 
         # Critic Network (w/ Target Network)
-        self.critic_local = Critic(critic_input, random_seed).to(device)
-        self.critic_target = Critic(critic_input, random_seed).to(device)
+        self.critic_local = Critic(state_size, critic_action_size, random_seed).to(device)
+        self.critic_target = Critic(state_size, critic_action_size, random_seed).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # Noise process
-        self.noise = OUNoise(actor_output, random_seed)
+        self.noise = OUNoise(action_size, random_seed)
         
         # Replay memory
-        self.memory = ReplayBuffer(actor_output, BUFFER_SIZE, BATCH_SIZE, random_seed)
+        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
 
     def step(self, state, action, reward, next_state, done):
         """Save experience in replay memory, and use random sample from buffer to learn."""

@@ -8,9 +8,8 @@ import torch.nn.functional as F
 class MADDPG:
     def __init__(self, state_size, action_size, n_agents, random_seed):
         super(MADDPG, self).__init__()
-        self.maddpg_agent = [Agent(state_size*n_agents, action_size, 
-                                   (state_size+action_size)*n_agents, random_seed, 
-                                   f'a{i}') for i in range(n_agents)]
+        self.maddpg_agent = [Agent(state_size*n_agents, action_size, action_size*n_agents, 
+                                   random_seed, f'a{i}') for i in range(n_agents)]
         
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
