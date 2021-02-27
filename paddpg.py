@@ -1,20 +1,13 @@
-from ddpg_agent import Agent, ReplayBuffer
+from ddpg_agent import Agent, BATCH_SIZE, GAMMA
 import numpy as np
 
 import torch
 
 
-BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 15         # minibatch size
-GAMMA = 0.99            # discount factor
-TAU = 1e-3              # for soft update of target parameters
-
 class PADDPG:
     def __init__(self, state_size, action_size, n_agents, random_seed):
         super(PADDPG, self).__init__()
         self.paddpg_agent = [Agent(state_size, action_size, state_size+action_size, random_seed, f'a{i}') for i in range(n_agents)]
-        # Replay memory
-        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
         
     def act(self, states):
         last_states = states[:,-8:]
@@ -29,18 +22,18 @@ class PADDPG:
         last_states = states[:,-8:]
         last_next_states = next_states[:,-8:]
         # Save experience / reward
-        for state, action, reward, next_state, done in zip(last_states, actions, rewards, last_next_states, dones):
-            self.memory.add(state, action, reward, next_state, done)
+        for agent, state, action, reward, next_state, done in zip(self.paddpg_agent, last_states, actions, rewards, last_next_states, dones):
+            agent.step(state, action, reward, next_state, done)
             
     def reset(self):
         for agent in self.paddpg_agent:
             agent.reset()
             
     def learn(self):
-        # Learn, if enough samples are available in memory
-        if len(self.memory) > BATCH_SIZE:
-            for agent in self.paddpg_agent:
-                experiences = self.memory.sample()
+        for agent in self.paddpg_agent:
+            # Learn, if enough samples are available in memory
+            if len(agent.memory) > BATCH_SIZE:
+                experiences = agent.memory.sample()
                 agent.learn(experiences, GAMMA)
             
     def save(self):
