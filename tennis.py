@@ -15,7 +15,7 @@ action_size = brain.vector_action_space_size         # size of each action
 states      = env_info.vector_observations[:,-8:]    # examine the state space 
 state_size  = states.shape[1]
 # create the agent
-agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=2, random_seed=5)
+agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=2, random_seed=0)
 
 def ddpg(n_episodes=1000):
     scores_deque      = deque(maxlen=100) # last 100 scores
@@ -23,17 +23,24 @@ def ddpg(n_episodes=1000):
     max_average_score = 0                 # max average score
     for i_episode in range(1, n_episodes+1):
         agents.reset()                                           # reset noise    
-        env_info       = env.reset(train_mode=True)[brain_name] # reset the environment    
+        env_info       = env.reset(train_mode=True)[brain_name]  # reset the environment    
         states         = env_info.vector_observations            # get the current state
         episode_scores = np.zeros(num_agents)                    # initialize the score
+        rewards_deque  = deque(maxlen=3)
+        actions_deque  = deque(maxlen=3)
+        dones_deque    = deque(maxlen=3)
         while True:
             actions     = agents.act(states)                    # select an action
             env_info    = env.step(actions)[brain_name]         # send action to tne environment
             next_states = env_info.vector_observations          # get next state
             rewards     = env_info.rewards                      # get reward
             dones       = env_info.local_done                   # see if episode finished
-            agents.step(states, actions, rewards, next_states,
-                       dones)                                   # Save experience
+            rewards_deque.append(rewards)
+            actions_deque.append(actions)
+            dones_deque.append(dones)  
+            if len(rewards_deque) == 3:
+                agents.step(states, actions_deque, rewards_deque, next_states,
+                           dones_deque)                                   # Save experience
             episode_scores += rewards                           # update the score
             states          = next_states                       # roll over state to next time step
             if np.any(dones):                                   # exit loop if episode finished

@@ -24,11 +24,13 @@ class MADDPG:
     
     def step(self, states, actions, rewards, next_states, dones):
         """Save experience in replay memory, and use random sample from buffer to learn."""
-        flatten_state = states[:,-8:].flatten()
-        flatten_action = actions.flatten()
-        flatten_next_state = next_states[:,-8:].flatten()
+        first_state = states[:, :8].flatten()
+        first_action = actions[0].flatten()
+        cumulative_rewards = np.sum(rewards, axis=0)
+        first_next_state = next_states[:, :8].flatten()
+        first_dones = dones[0]
         # Save experience / reward
-        self.memory.add(flatten_state, flatten_action, rewards, flatten_next_state, dones)   
+        self.memory.add(first_state, first_action, cumulative_rewards, first_next_state, first_dones)   
             
     def reset(self):
         for agent in self.maddpg_agent:
