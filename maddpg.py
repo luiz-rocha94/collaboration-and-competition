@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Feb 25 17:44:58 2021
-
-@author: rocha
-"""
-
 from ddpg_agent import Agent, ReplayBuffer
 import numpy as np
 
@@ -13,7 +6,7 @@ import torch.nn.functional as F
 
 
 BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 30         # minibatch size
+BATCH_SIZE = 15         # minibatch size
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 
