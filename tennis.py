@@ -26,27 +26,20 @@ def ddpg(n_episodes=1000):
         env_info       = env.reset(train_mode=True)[brain_name]  # reset the environment    
         states         = env_info.vector_observations            # get the current state
         episode_scores = np.zeros(num_agents)                    # initialize the score
-        rewards_deque  = deque(maxlen=3)
-        actions_deque  = deque(maxlen=3)
-        dones_deque    = deque(maxlen=3)
         while True:
             actions     = agents.act(states)                    # select an action
             env_info    = env.step(actions)[brain_name]         # send action to tne environment
             next_states = env_info.vector_observations          # get next state
             rewards     = env_info.rewards                      # get reward
             dones       = env_info.local_done                   # see if episode finished
-            rewards_deque.append(rewards)
-            actions_deque.append(actions)
-            dones_deque.append(dones)  
-            if len(rewards_deque) == 3:
-                agents.step(states, actions_deque, rewards_deque, next_states,
-                           dones_deque)                                   # Save experience
+            agents.step(states, actions, rewards, next_states,
+                        dones)                                  # Save experience
             episode_scores += rewards                           # update the score
             states          = next_states                       # roll over state to next time step
             if np.any(dones):                                   # exit loop if episode finished
                 break
         agents.learn()                                          # Agents learn
-        score = np.mean(episode_scores)                         # mean episode score
+        score = np.max(episode_scores)                          # max episode score
         scores_deque.append(score)      
         scores.append(score)
         average_score = np.mean(scores_deque)                   # average score
@@ -84,5 +77,5 @@ while True:
     print('\rScore: {:.2f}'.format(score), end="")
     if np.any(dones):                               # exit loop if episode finished
         break
-        
+
 env.close()
