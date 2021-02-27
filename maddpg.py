@@ -32,7 +32,7 @@ class MADDPG:
             
     def reset(self):
         for agent in self.maddpg_agent:
-            agent.reset()
+            agent.noise.reset()
             
     def local_act(self, agent_i, states):
         """get actions from all agents in the MADDPG object"""
@@ -90,8 +90,21 @@ class MADDPG:
             
             for agent in self.maddpg_agent:
                 # ----------------------- update target networks ----------------------- #
-                agent.soft_update(agent.critic_local, agent.critic_target, TAU)
-                agent.soft_update(agent.actor_local, agent.actor_target, TAU)     
+                self.soft_update(agent.critic_local, agent.critic_target, TAU)
+                self.soft_update(agent.actor_local, agent.actor_target, TAU)     
+                
+    def soft_update(self, local_model, target_model, tau):
+        """Soft update model parameters.
+        θ_target = τ*θ_local + (1 - τ)*θ_target
+
+        Params
+        ======
+            local_model: PyTorch model (weights will be copied from)
+            target_model: PyTorch model (weights will be copied to)
+            tau (float): interpolation parameter 
+        """
+        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+            target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)                       
             
     def save(self):
         for agent in self.maddpg_agent:

@@ -15,7 +15,7 @@ action_size = brain.vector_action_space_size         # size of each action
 states      = env_info.vector_observations[:,-8:]    # examine the state space 
 state_size  = states.shape[1]
 # create the agent
-agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=2, random_seed=4)
+agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=2, random_seed=5)
 
 def ddpg(n_episodes=1000):
     scores_deque      = deque(maxlen=100) # last 100 scores
