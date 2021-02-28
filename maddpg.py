@@ -18,9 +18,9 @@ class MADDPG:
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
         
     def act(self, states):
-        last_states = states[:, -self.state_size:]
+        states = states[:, -self.state_size:]
         actions = np.empty((0, self.action_size))
-        for agent, state in zip(self.maddpg_agent, last_states):
+        for agent, state in zip(self.maddpg_agent, states):
             action = agent.act(state)
             actions = np.vstack((actions, action))
         return actions
@@ -42,13 +42,13 @@ class MADDPG:
         states = states.split(self.state_size, dim=1)
         target_actions = [agent.actor_local(state) if i == agent_i else agent.actor_local(state).detach() 
                           for i, agent, state in zip([x for x in range(self.n_agents)], self.maddpg_agent, states)]
-        return torch.cat(target_actions, dim=-1)
+        return torch.cat(target_actions, dim=1)
 
     def target_act(self, next_states):
         """get target network actions from all the agents in the MADDPG object """
         next_states = next_states.split(self.state_size, dim=1)
         target_actions = [agent.actor_target(next_state) for agent, next_state in zip(self.maddpg_agent, next_states)]
-        return torch.cat(target_actions, dim=-1)
+        return torch.cat(target_actions, dim=1)
             
     def learn(self):
         """Update policy and value parameters using given batch of experience tuples.
