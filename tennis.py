@@ -61,7 +61,7 @@ plt.plot(np.arange(1, len(scores)+1), average_scores)
 plt.ylabel('Score')
 plt.xlabel('Episode #')
 plt.show()
-
+"""
 agents.load()
 
 agents.reset()                                           # reset noise    
@@ -81,4 +81,5 @@ while True:
     if np.any(dones):                               # exit loop if episode finished
         break
 
+"""
 env.close()
