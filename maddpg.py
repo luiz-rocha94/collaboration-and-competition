@@ -1,4 +1,4 @@
-from ddpg_agent import Agent, ReplayBuffer, BUFFER_SIZE, BATCH_SIZE, GAMMA, TAU   
+from ddpg_agent import Agent, ReplayBuffer, BUFFER_SIZE, BATCH_SIZE, GAMMA, TAU  
 import numpy as np
 
 import torch
@@ -11,15 +11,15 @@ class MADDPG:
         self.maddpg_agent = [Agent(state_size, action_size, (state_size+action_size)*n_agents, 
                                    random_seed, f'a{i}') for i in range(n_agents)]
         
-        self.state_size = state_size
+        self.state_size  = state_size
         self.action_size = action_size
-        self.n_agents = n_agents
+        self.n_agents    = n_agents
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
         
     def act(self, states):
-        last_states = states[:,-self.state_size:]
-        actions = np.empty((0,self.action_size))
+        last_states = states[:, -self.state_size:]
+        actions = np.empty((0, self.action_size))
         for agent, state in zip(self.maddpg_agent, last_states):
             action = agent.act(state)
             actions = np.vstack((actions, action))
@@ -27,11 +27,11 @@ class MADDPG:
     
     def step(self, states, actions, rewards, next_states, dones):
         """Save experience in replay memory, and use random sample from buffer to learn."""
-        last_states = states[:, -self.state_size:].flatten()
+        states = states[:, -self.state_size:].flatten()
         actions = actions.flatten()
-        last_next_states = next_states[:, -self.state_size:].flatten()
+        next_states = next_states[:, -self.state_size:].flatten()
         # Save experience / reward
-        self.memory.add(last_states, actions, rewards, last_next_states, dones)   
+        self.memory.add(states, actions, rewards, next_states, dones)   
             
     def reset(self):
         for agent in self.maddpg_agent:
