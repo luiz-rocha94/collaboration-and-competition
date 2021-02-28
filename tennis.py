@@ -19,7 +19,8 @@ agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=num_age
 
 def ddpg(n_episodes=1000):
     scores_deque      = deque(maxlen=100) # last 100 scores
-    scores            = []                # all scores       
+    scores            = []                # all scores  
+    average_scores    = []                # all average scores         
     max_average_score = 0                 # max average score
     for i_episode in range(1, n_episodes+1):
         agents.reset()                                           # reset noise    
@@ -43,18 +44,20 @@ def ddpg(n_episodes=1000):
         scores_deque.append(score)      
         scores.append(score)
         average_score = np.mean(scores_deque)                   # average score
+        average_scores.append(average_score)
         print('\rEpisode {}\tAverage Score: {:.2f}\tScore: {:.2f}'.format(i_episode, average_score, score), end="")
         if average_score > max_average_score and average_score >= 0.5:
             # Save best agent
             agents.save()
         max_average_score = max(max_average_score, average_score)
-    return scores
+    return scores, average_scores
 
-scores = ddpg()
+scores, average_scores = ddpg()
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
 plt.plot(np.arange(1, len(scores)+1), scores)
+plt.plot(np.arange(1, len(scores)+1), average_scores)
 plt.ylabel('Score')
 plt.xlabel('Episode #')
 plt.show()
