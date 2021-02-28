@@ -17,7 +17,7 @@ state_size  = states.shape[1]
 # create the agent
 agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=num_agents, random_seed=0)
 
-def ddpg(n_episodes=3000):
+def ddpg(n_episodes=1000):
     scores_deque      = deque(maxlen=100) # last 100 scores
     scores            = []                # all scores  
     average_scores    = []                # all average scores         
