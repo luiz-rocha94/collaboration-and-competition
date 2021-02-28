@@ -21,14 +21,14 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent():
     """Interacts with and learns from the environment."""
     
-    def __init__(self, state_size, action_size, critic_action_size, random_seed, name):
+    def __init__(self, state_size, action_size, critic_input_size, random_seed, name):
         """Initialize an Agent object.
         
         Params
         ======
             state_size (int): dimension of each state
             action_size (int): dimension of each action
-            critic_action_size (int): dimension of all actions
+            critic_input_size (int): dimension of (each state + each action) * number of agents.
             random_seed (int): random seed
             name (str) : name of the agent
         """
@@ -43,8 +43,8 @@ class Agent():
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=LR_ACTOR)
 
         # Critic Network (w/ Target Network)
-        self.critic_local = Critic(state_size, critic_action_size, random_seed).to(device)
-        self.critic_target = Critic(state_size, critic_action_size, random_seed).to(device)
+        self.critic_local = Critic(critic_input_size, random_seed).to(device)
+        self.critic_target = Critic(critic_input_size, random_seed).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # Noise process
