@@ -2,6 +2,7 @@ from unityagents import UnityEnvironment
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
+from time import time
 
 from maddpg import MADDPG
 
@@ -12,12 +13,12 @@ brain       = env.brains[brain_name]
 env_info    = env.reset(train_mode=True)[brain_name] # reset the environment
 num_agents  = len(env_info.agents)                   # number of agents
 action_size = brain.vector_action_space_size         # size of each action
-states      = env_info.vector_observations[:, :8]    # examine the state space 
+states      = env_info.vector_observations           # examine the state space 
 state_size  = states.shape[1]
 # create the agent
 agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=num_agents, random_seed=0)
 
-def ddpg(n_episodes=1000):
+def ddpg(n_episodes=3000):
     scores_deque      = deque(maxlen=100) # last 100 scores
     scores            = []                # all scores  
     average_scores    = []                # all average scores         
@@ -61,25 +62,26 @@ plt.plot(np.arange(1, len(scores)+1), average_scores)
 plt.ylabel('Score')
 plt.xlabel('Episode #')
 plt.show()
+
 """
 agents.load()
-
 agents.reset()                                           # reset noise    
-env_info       = env.reset(train_mode=False)[brain_name] # reset the environment    
+env_info       = env.reset(train_mode=False)[brain_name]  # reset the environment    
 states         = env_info.vector_observations            # get the current state
 episode_scores = np.zeros(num_agents)                    # initialize the score
+time0 = time()
 while True:
-    actions         = agents.act(states)            # select an action
-    env_info        = env.step(actions)[brain_name] # send action to tne environment
-    next_states     = env_info.vector_observations  # get next state
-    rewards         = env_info.rewards              # get reward
-    dones           = env_info.local_done           # see if episode finished
-    episode_scores += rewards                       # update the score
-    states          = next_states                   # roll over state to next time step
-    score           = np.mean(episode_scores)
-    print('\rScore: {:.2f}'.format(score), end="")
-    if np.any(dones):                               # exit loop if episode finished
+    actions     = agents.act(states)                    # select an action
+    env_info    = env.step(actions)[brain_name]         # send action to tne environment
+    next_states = env_info.vector_observations          # get next state
+    rewards     = env_info.rewards                      # get reward
+    dones       = env_info.local_done                   # see if episode finished
+    episode_scores += rewards                           # update the score
+    states          = next_states                       # roll over state to next time step
+    score = np.max(episode_scores)                          # max episode score
+    dtime = time() - time0
+    print('\rScore: {:.2f}\tTime: {:.3f}'.format(score, dtime), end="")
+    if dtime > 60:                                   # exit loop if episode finished
         break
-
 """
 env.close()

@@ -9,7 +9,7 @@ class MADDPG:
     def __init__(self, state_size, action_size, n_agents, random_seed):
         super(MADDPG, self).__init__()
         self.maddpg_agent = [Agent(state_size, action_size, (state_size+action_size)*n_agents, 
-                                   random_seed, f'a{i}') for i in range(n_agents)]
+                                   random_seed) for i in range(n_agents)]
         
         self.state_size  = state_size
         self.action_size = action_size
@@ -21,6 +21,7 @@ class MADDPG:
         states = states[:, -self.state_size:]
         actions = np.empty((0, self.action_size))
         for agent, state in zip(self.maddpg_agent, states):
+            state = np.expand_dims(state, 0)
             action = agent.act(state)
             actions = np.vstack((actions, action))
         return actions
@@ -113,11 +114,11 @@ class MADDPG:
             
     def save(self):
         for agent in self.maddpg_agent:
-            torch.save(agent.actor_local.state_dict(), f'{agent.name}_checkpoint_actor.pth')
-            torch.save(agent.critic_local.state_dict(), f'{agent.name}_checkpoint_critic.pth')
+            torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
+            torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
             
     def load(self):
         for agent in self.maddpg_agent:
-            agent.actor_local.load_state_dict(torch.load(f'{agent.name}_checkpoint_actor.pth'))
-            agent.critic_local.load_state_dict(torch.load(f'{agent.name}_checkpoint_critic.pth'))  
+            agent.actor_local.load_state_dict(torch.load('checkpoint_actor.pth'))
+            agent.critic_local.load_state_dict(torch.load('checkpoint_critic.pth'))  
             

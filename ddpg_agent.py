@@ -21,7 +21,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent():
     """Interacts with and learns from the environment."""
     
-    def __init__(self, state_size, action_size, critic_input_size, random_seed, name):
+    def __init__(self, state_size, action_size, critic_input_size, random_seed):
         """Initialize an Agent object.
         
         Params
@@ -30,12 +30,10 @@ class Agent():
             action_size (int): dimension of each action
             critic_input_size (int): dimension of (each state + each action) * number of agents.
             random_seed (int): random seed
-            name (str) : name of the agent
         """
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(random_seed)
-        self.name = name
 
         # Actor Network (w/ Target Network)
         self.actor_local = Actor(state_size, action_size, random_seed).to(device)
@@ -81,7 +79,7 @@ class OUNoise:
     def sample(self):
         """Update internal state and return it as a noise sample."""
         x = self.state
-        dx = self.theta * (self.mu - x) + self.sigma * np.random.standard_normal(self.size)
+        dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(self.size)
         self.state = x + dx
         return self.state
 
