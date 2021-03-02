@@ -95,7 +95,6 @@ class ReplayBuffer:
         """
         self.action_size = action_size
         self.memory = deque(maxlen=buffer_size)  # internal memory (deque)
-        self.sum_priority = 0
         self.batch_size = batch_size
         self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done", "priority"])
         self.seed = random.seed(seed)
@@ -103,30 +102,20 @@ class ReplayBuffer:
     def add(self, state, action, reward, next_state, done, priority):
         """Add a new experience to memory."""
         e = self.experience(state, action, reward, next_state, done, priority)
-        self.sum_priority += priority
         self.memory.append(e)
     
     def sample(self):
         """Randomly sample a batch of experiences from memory."""
-        probs = [e.priority/self.sum_priority for e in self.memory if e is not None]
+        sum_priority = sum([e.priority for e in self.memory if e is not None])
+        probs = [e.priority/sum_priority for e in self.memory if e is not None]
         experiences = random.choices(self.memory, probs, k=self.batch_size)
-        # Get experiences
-        states, actions, rewards, next_states, dones, probabilities = [], [], [], [], [], []
-        for e in experiences:
-            if e is not None:
-                states.append(e.state)
-                actions.append(e.action)
-                rewards.append(e.reward)
-                next_states.append(e.next_state)
-                dones.append(e.done)
-                probabilities.append(e.priority/self.sum_priority)
-        # Torch values.
-        states = torch.from_numpy(np.vstack(states)).float().to(device)
-        actions = torch.from_numpy(np.vstack(actions)).float().to(device)
-        rewards = torch.from_numpy(np.vstack(rewards)).float().to(device)
-        next_states = torch.from_numpy(np.vstack(next_states)).float().to(device)
-        dones = torch.from_numpy(np.vstack(dones).astype(np.uint8)).float().to(device)
-        probabilities = torch.from_numpy(np.vstack(probabilities)).float().to(device)
+        
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float().to(device)
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).float().to(device)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float().to(device)
+        next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(device)
+        dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(device)
+        probabilities = torch.from_numpy(np.vstack([e.priority/sum_priority for e in self.memory if e is not None])).float().to(device)
         
         return (states, actions, rewards, next_states, dones, probabilities)
 
