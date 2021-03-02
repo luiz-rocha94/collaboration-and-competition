@@ -17,7 +17,7 @@ state_size  = states.shape[1]
 # create the agent
 agents = MADDPG(state_size=state_size, action_size=action_size, n_agents=num_agents, random_seed=5)
 
-def ddpg(n_episodes=3000):
+def maddpg(n_episodes=3000):
     scores_deque      = deque(maxlen=100) # last 100 scores
     scores            = []                # all scores  
     average_scores    = []                # all average scores         
@@ -51,7 +51,7 @@ def ddpg(n_episodes=3000):
         max_average_score = max(max_average_score, average_score)
     return scores, average_scores
 
-scores, average_scores = ddpg()
+scores, average_scores = maddpg()
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -67,7 +67,7 @@ agents.reset()                                           # reset noise
 env_info       = env.reset(train_mode=False)[brain_name] # reset the environment    
 states         = env_info.vector_observations            # get the current state
 episode_scores = np.zeros(num_agents)                    # initialize the score
-for _ in range(100):
+while True:
     actions         = agents.act(states)                 # select an action
     env_info        = env.step(actions)[brain_name]      # send action to tne environment
     next_states     = env_info.vector_observations       # get next state
@@ -77,5 +77,7 @@ for _ in range(100):
     states          = next_states                        # roll over state to next time step
     score = np.max(episode_scores)                       # max episode score
     print('\rScore: {:.2f}'.format(score), end="")
+    if np.any(dones):                                    # exit loop if episode finished
+        break
 """
 env.close()
