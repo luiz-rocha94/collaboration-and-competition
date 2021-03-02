@@ -1,4 +1,4 @@
-from ddpg_agent import Agent, ReplayBuffer, BUFFER_SIZE, BATCH_SIZE, GAMMA, TAU  
+from ddpg_agent import Agent, ReplayBuffer, BUFFER_SIZE, BATCH_SIZE, GAMMA, TAU
 import numpy as np
 
 import torch
@@ -32,7 +32,10 @@ class MADDPG:
         actions = actions.flatten()
         next_states = next_states[:, -self.state_size:].flatten()
         # Save experience / reward
-        self.memory.add(states, actions, rewards, next_states, dones)   
+        self.memory.add(states, actions, rewards, next_states, dones)
+        # Learn, if enough samples are available in memory
+        if len(self.memory) > BATCH_SIZE:
+            self.learn()
             
     def reset(self):
         for agent in self.maddpg_agent:
@@ -63,41 +66,39 @@ class MADDPG:
             experiences (Tuple[torch.Tensor]): tuple of (s, a, r, s', done) tuples 
             gamma (float): discount factor
         """
-        # Learn, if enough samples are available in memory
-        if len(self.memory) > BATCH_SIZE:
-            for i, agent in enumerate(self.maddpg_agent):
-                experiences = self.memory.sample()
-                states, actions, rewards, next_states, dones = experiences
-                rewards = rewards[:,i].unsqueeze(1)
-                dones = dones[:,i].unsqueeze(1)
+        for i, agent in enumerate(self.maddpg_agent):
+            experiences = self.memory.sample()
+            states, actions, rewards, next_states, dones = experiences
+            rewards = rewards[:,i].unsqueeze(1)
+            dones = dones[:,i].unsqueeze(1)
+    
+            # ---------------------------- update critic ---------------------------- #
+            # Get predicted next-state actions and Q values from target models
+            actions_next = self.target_act(next_states)
+            Q_targets_next = agent.critic_target(next_states, actions_next)
+            # Compute Q targets for current states (y_i)
+            Q_targets = rewards + (GAMMA * Q_targets_next * (1 - dones))
+            # Compute critic loss
+            Q_expected = agent.critic_local(states, actions)
+            critic_loss = F.mse_loss(Q_expected, Q_targets.detach())
+            # Minimize the loss
+            agent.critic_optimizer.zero_grad()
+            critic_loss.backward(retain_graph=True)
+            agent.critic_optimizer.step()
+    
+            # ---------------------------- update actor ---------------------------- #
+            # Compute actor loss
+            actions_pred = self.local_act(i, states)
+            actor_loss = -agent.critic_local(states, actions_pred).mean()
+            # Minimize the loss
+            agent.actor_optimizer.zero_grad()
+            actor_loss.backward(retain_graph=True)
+            agent.actor_optimizer.step()
         
-                # ---------------------------- update critic ---------------------------- #
-                # Get predicted next-state actions and Q values from target models
-                actions_next = self.target_act(next_states)
-                Q_targets_next = agent.critic_target(next_states, actions_next)
-                # Compute Q targets for current states (y_i)
-                Q_targets = rewards + (GAMMA * Q_targets_next * (1 - dones))
-                # Compute critic loss
-                Q_expected = agent.critic_local(states, actions)
-                critic_loss = F.mse_loss(Q_expected, Q_targets.detach())
-                # Minimize the loss
-                agent.critic_optimizer.zero_grad()
-                critic_loss.backward(retain_graph=True)
-                agent.critic_optimizer.step()
-        
-                # ---------------------------- update actor ---------------------------- #
-                # Compute actor loss
-                actions_pred = self.local_act(i, states)
-                actor_loss = -agent.critic_local(states, actions_pred).mean()
-                # Minimize the loss
-                agent.actor_optimizer.zero_grad()
-                actor_loss.backward(retain_graph=True)
-                agent.actor_optimizer.step()
-            
-            for agent in self.maddpg_agent:
-                # ----------------------- update target networks ----------------------- #
-                self.soft_update(agent.critic_local, agent.critic_target, TAU)
-                self.soft_update(agent.actor_local, agent.actor_target, TAU)     
+        for agent in self.maddpg_agent:
+            # ----------------------- update target networks ----------------------- #
+            self.soft_update(agent.critic_local, agent.critic_target, TAU)
+            self.soft_update(agent.actor_local, agent.actor_target, TAU)     
                 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
