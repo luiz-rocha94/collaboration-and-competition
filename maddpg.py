@@ -1,4 +1,4 @@
-from ddpg_agent import Agent, ReplayBuffer, BUFFER_SIZE, BATCH_SIZE, GAMMA, TAU, device
+from ddpg_agent import Agent, ReplayBuffer, BUFFER_SIZE, BATCH_SIZE, GAMMA, TAU
 import numpy as np
 
 import torch
@@ -26,45 +26,13 @@ class MADDPG:
             actions = np.vstack((actions, action))
         return actions
     
-    def priority(self, states, actions, rewards, next_states, dones):
-        # Change all networks to eval.
-        for agent in self.maddpg_agent:
-            agent.actor_local.eval()
-            agent.actor_target.eval()
-            agent.critic_local.eval()
-            agent.critic_target.eval()
-        # Get best agent    
-        i = np.argmax(rewards)
-        agent = self.maddpg_agent[i]
-        # Compute Q_values.
-        states = torch.from_numpy(states).float().to(device).unsqueeze(0)
-        actions = torch.from_numpy(actions).float().to(device).unsqueeze(0)
-        next_states = torch.from_numpy(next_states).float().to(device).unsqueeze(0)
-        with torch.no_grad():    
-            # Compute target
-            actions_next = self.target_act(next_states)
-            Q_targets_next = agent.critic_target(next_states, actions_next).cpu().data.numpy().flatten()
-            # Compute expected
-            Q_expected = agent.critic_local(states, actions).cpu().data.numpy().flatten()
-        # Change all networks to train.
-        for agent in self.maddpg_agent:
-            agent.actor_local.train()
-            agent.actor_target.train()
-            agent.critic_local.train()
-            agent.critic_target.train()    
-        # Compute priority    
-        Q_targets = rewards[i] + (GAMMA * Q_targets_next * (1 - dones[i]))   
-        p_value = abs(Q_targets - Q_expected)
-        return p_value
-    
     def step(self, states, actions, rewards, next_states, dones):
         """Save experience in replay memory, and use random sample from buffer to learn."""
         states = states[:, -self.state_size:].flatten()
         actions = actions.flatten()
         next_states = next_states[:, -self.state_size:].flatten()
         # Save experience / reward
-        p_value = self.priority(states, actions, rewards, next_states, dones)
-        self.memory.add(states, actions, rewards, next_states, dones, p_value)
+        self.memory.add(states, actions, rewards, next_states, dones)
         # Learn, if enough samples are available in memory
         if len(self.memory) > BATCH_SIZE:
             self.learn()
@@ -100,7 +68,7 @@ class MADDPG:
         """
         for i, agent in enumerate(self.maddpg_agent):
             experiences = self.memory.sample()
-            states, actions, rewards, next_states, dones, probabilities = experiences
+            states, actions, rewards, next_states, dones = experiences
             rewards = rewards[:,i].unsqueeze(1)
             dones = dones[:,i].unsqueeze(1)
     
